@@ -201,9 +201,9 @@
      (error "I don't know where to get" ingredient))))
 
 (defn -main []
-  (bake-cake)
-  (bake-cookies)
-  (fetch-from-pantry :flour 12)
-  (fetch-from-fridge :milk 20)
+  (fetch-ingredient :flour 23)
+  (fetch-ingredient :sugar 56)
+  (fetch-ingredient :milk 10)
+  (fetch-ingredient :egg 90)
   (status))
   
