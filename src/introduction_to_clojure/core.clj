@@ -32,22 +32,20 @@
   (grab :butter)
   (add-to-bowl))
 
+(def scooped-ingredients #{:milk :flour :sugar})
+
 (defn scooped? [ingredient]
-  (cond
-    (= ingredient :milk)
-    true
-    (= ingredient :flour)
-    true
-    (= ingredient :sugar)
-    true
-    :else
-    false))
+  (contains? scooped-ingredients ingredient))
+
+(def squeezed-ingredients #{:egg})
 
 (defn squeezed? [ingredient]
-  (= ingredient :egg))
+  (contains? squeezed-ingredients ingredient))
+
+(def simple-ingredients #{:butter})
 
 (defn simple? [ingredient]
-  (= ingredient :butter))
+  (contains? simple-ingredients ingredient))
 
 (defn add-eggs [n]
   (dotimes [e n]
@@ -83,9 +81,7 @@
          (squeeze)
          (add-to-bowl))
        :ok)
-     (do
-       (println "This function only works on squeezed ingredients. You asked me to squeeze" ingredient)
-       :error)))
+     (error "This function only works on squeezed ingredients. You asked me to squeeze" ingredient)))
   ([ingredient]
    (add-squeezed ingredient 1)))
 
@@ -99,9 +95,7 @@
          (add-to-bowl)
          (release))
        :ok)
-     (do
-       (println "This function only works on scooped ingredients. You asked me to scoop" ingredient)
-       :error)))
+     (error "This function only works on scooped ingredients. You asked me to scoop" ingredient)))
   ([ingredient]
    (add-scooped ingredient 1)))
 
@@ -113,9 +107,7 @@
          (grab ingredient)
          (add-to-bowl))
        :ok)
-     (do
-       (println "This function only works on simple ingredients. You asked me to add" ingredient)
-       :error)))
+     (error "This function only works on simple ingredients. You asked me to add" ingredient)))
   ([ingredient]
    (add-simple ingredient 1)))
 
@@ -131,10 +123,7 @@
      (simple? ingredient)
      (add-simple ingredient amount)
      :else
-     (do
-       (println "I do not know the ingredient" ingredient)
-       :error))))
-
+     (error "I do not know the ingredient" ingredient))))
 (defn bake-cake []
   (add :egg 2)
   (add :flour 2)
@@ -155,6 +144,66 @@
   (bake-pan 30)
   (cool-pan))
 
+(def pantry-ingredients #{:flour :sugar})
+
+(defn from-pantry? [ingredient]
+  (contains? pantry-ingredients ingredient))
+
+(def fridge-ingredients #{:egg :milk :butter})
+
+(defn from-fridge? [ingredient]
+  (contains? fridge-ingredients ingredient))
+
+(from-fridge? :egg)
+(from-fridge? :flour)
+
+(from-pantry? :flour)
+(from-pantry? :egg)
+
+(defn fetch-from-pantry
+  ([ingredient]
+   (fetch-from-pantry ingredient 1))
+  ([ingredient amount]
+   (if (from-pantry? ingredient)
+     (do
+       (go-to :pantry)
+       (dotimes [i amount]
+         (load-up ingredient))
+       (go-to :prep-area)
+       (dotimes [i amount]
+         (unload ingredient)))
+     (error "This function only works on ingredients that are stored in the pantry. You asked me to fetch" ingredient))))
+
+(defn fetch-from-fridge
+  ([ingredient]
+   (fetch-from-fridge ingredient 1))
+  ([ingredient amount]
+   (if (from-fridge? ingredient)
+     (do
+       (go-to :fridge)
+       (dotimes [i amount]
+         (load-up ingredient))
+       (go-to :prep-area)
+       (dotimes [i amount]
+         (unload ingredient)))
+     (error "This function only works on ingredients that are stored in the fridge. You asked me to fetch" ingredient))))
+
+(defn fetch-ingredient
+  ([ingredient]
+   (fetch-ingredient ingredient 1))
+  ([ingredient amount]
+   (cond
+     (from-fridge? ingredient)
+     (fetch-from-fridge ingredient amount)
+     (from-pantry? ingredient)
+     (fetch-from-pantry ingredient amount)
+     :else
+     (error "I don't know where to get" ingredient))))
+
 (defn -main []
   (bake-cake)
-  (bake-cookies))
+  (bake-cookies)
+  (fetch-from-pantry :flour 12)
+  (fetch-from-fridge :milk 20)
+  (status))
+  
