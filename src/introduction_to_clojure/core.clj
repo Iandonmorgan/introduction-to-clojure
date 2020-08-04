@@ -200,6 +200,48 @@
      :else
      (error "I don't know where to get" ingredient))))
 
+{:flour 10
+ :egg 7
+ :sugar 12
+ :milk 3
+ :butter 6}
+
+(defn fetch-list [shopping]
+  (go-to :pantry)
+  (when (contains? shopping :flour)
+    (dotimes [i (get shopping :flour)]
+      (load-up :flour)))
+  (when (contains? shopping :sugar)
+    (dotimes [i (get shopping :sugar)]
+      (load-up :sugar)))
+  (go-to :fridge)
+  (when (contains? shopping :egg)
+    (dotimes [i (get shopping :egg)]
+      (load-up :egg)))
+  (when (contains? shopping :milk)
+    (dotimes [i (get shopping :milk)]
+      (load-up :milk)))
+  (when (contains? shopping :butter)
+    (dotimes [i (get shopping :butter)]
+      (load-up :butter)))
+  (go-to :prep-area)
+  (when (contains? shopping :flour)
+    (dotimes [i (get shopping :flour)]
+      (unload :flour)))
+  (when (contains? shopping :sugar)
+    (dotimes [i (get shopping :sugar)]
+      (unload :sugar)))
+  (when (contains? shopping :egg)
+    (dotimes [i (get shopping :egg)]
+      (unload :egg)))
+  (when (contains? shopping :milk)
+    (dotimes [i (get shopping :milk)]
+      (unload :milk)))
+  (when (contains? shopping :butter)
+    (dotimes [i (get shopping :butter)]
+      (unload :butter))))
+
+
 (defn -main []
   (fetch-ingredient :flour 23)
   (fetch-ingredient :sugar 56)
