@@ -5,33 +5,6 @@
   (apply println args)
   :error)
 
-(defn add-egg []
-  (grab :egg)
-  (squeeze)
-  (add-to-bowl))
-
-(defn add-flour []
-  (grab :cup)
-  (scoop :flour)
-  (add-to-bowl)
-  (release))
-
-(defn add-milk []
-  (grab :cup)
-  (scoop :milk)
-  (add-to-bowl)
-  (release))
-
-(defn add-sugar []
-  (grab :cup)
-  (scoop :sugar)
-  (add-to-bowl)
-  (release))
-
-(defn add-butter []
-  (grab :butter)
-  (add-to-bowl))
-
 (def scooped-ingredients #{:milk :flour :sugar})
 
 (defn scooped? [ingredient]
@@ -46,31 +19,6 @@
 
 (defn simple? [ingredient]
   (contains? simple-ingredients ingredient))
-
-(defn add-eggs [n]
-  (dotimes [e n]
-    (add-egg))
-  :ok)
-
-(defn add-flour-cups [n]
-  (dotimes [e n]
-    (add-flour))
-  :ok)
-
-(defn add-milk-cups [n]
-  (dotimes [e n]
-    (add-milk))
-  :ok)
-
-(defn add-sugar-cups [n]
-  (dotimes [e n]
-    (add-sugar))
-  :ok)
-
-(defn add-butters [n]
-  (dotimes [e n]
-    (add-butter))
-  :ok)
 
 (defn add-squeezed
   ([ingredient amount]
@@ -200,52 +148,90 @@
      :else
      (error "I don't know where to get" ingredient))))
 
-{:flour 10
- :egg 7
- :sugar 12
- :milk 3
- :butter 6}
+(def ingredients 
+  {:flour 10
+   :egg 7
+   :sugar 12
+   :milk 3
+   :butter 6})
+
+(get ingredients :butter)
+
+(defn load-up-amount [ingredient amount]
+  (dotimes [i amount]
+    (load-up ingredient)))
+
+(defn unload-amount [ingredient amount]
+  (dotimes [i amount]
+    (unload ingredient)))
+
+(def locations {:pantry pantry-ingredients
+                :fridge fridge-ingredients})
 
 (defn fetch-list [shopping]
-  (go-to :pantry)
-  (when (contains? shopping :flour)
-    (dotimes [i (get shopping :flour)]
-      (load-up :flour)))
-  (when (contains? shopping :sugar)
-    (dotimes [i (get shopping :sugar)]
-      (load-up :sugar)))
-  (go-to :fridge)
-  (when (contains? shopping :egg)
-    (dotimes [i (get shopping :egg)]
-      (load-up :egg)))
-  (when (contains? shopping :milk)
-    (dotimes [i (get shopping :milk)]
-      (load-up :milk)))
-  (when (contains? shopping :butter)
-    (dotimes [i (get shopping :butter)]
-      (load-up :butter)))
+  (doseq [location (keys locations)]
+    (go-to location)
+    (doseq [ingredient (get locations location)]
+      (load-up-amount ingredient (get shopping ingredient 0))))
   (go-to :prep-area)
-  (when (contains? shopping :flour)
-    (dotimes [i (get shopping :flour)]
-      (unload :flour)))
-  (when (contains? shopping :sugar)
-    (dotimes [i (get shopping :sugar)]
-      (unload :sugar)))
-  (when (contains? shopping :egg)
-    (dotimes [i (get shopping :egg)]
-      (unload :egg)))
-  (when (contains? shopping :milk)
-    (dotimes [i (get shopping :milk)]
-      (unload :milk)))
-  (when (contains? shopping :butter)
-    (dotimes [i (get shopping :butter)]
-      (unload :butter))))
+  (doseq [location (keys locations)]
+    (doseq [ingredient (get locations location)]
+      (unload-amount ingredient (get shopping ingredient 0)))))
 
+(defn add-ingredients [a b]
+  (merge-with + a b))          
+
+(defn multiply-ingredients [quantity ingredients]
+  (into {}
+    (for [kv ingredients]
+      [(first kv) (* quantity (second kv))])))
+
+(defn order->ingredients [order]
+  (let [items (get order :items)]
+    (add-ingredients
+      (multiply-ingredients (get items :cake 0) {:egg 2
+                                                 :flour 2
+                                                 :sugar 1
+                                                 :milk 1})
+      (multiply-ingredients (get items :cookies 0) {:egg 1
+                                                    :flour 1
+                                                    :sugar 1}))))
+
+(defn orders->ingredients [orders]
+  (reduce add-ingredients {}
+    (for [order orders]
+      (order->ingredients order))))
+
+(order->ingredients
+  {:items {:cake 3}})
+
+(orders->ingredients
+  [{:items {:cake 1}}
+   {:items {:cake 2}}])
+
+(defn bake [item]
+  (cond
+    (= item :cake)
+    (bake-cake)
+    (= item :cookies)
+    (bake-cookies)
+    :else
+    (error "I don't know how to bake" item)))
+    
+
+(defn day-at-the-bakery []
+  (let [orders (get-morning-orders)
+        ingredients (orders->ingredients orders)]
+    (fetch-list ingredients)
+    (doseq [order orders]
+      (let [items (get order :items)
+            racks (for [kv items
+                        i (range (second kv))]
+                    (bake (first kv)))]
+        (delivery {:orderid (get order :orderid)
+                   :address (get order :address)
+                   :rackids racks})))))
 
 (defn -main []
-  (fetch-ingredient :flour 23)
-  (fetch-ingredient :sugar 56)
-  (fetch-ingredient :milk 10)
-  (fetch-ingredient :egg 90)
-  (status))
+  (day-at-the-bakery))
   
